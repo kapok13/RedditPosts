@@ -5,14 +5,13 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ProgressBar;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
-import androidx.recyclerview.widget.DividerItemDecoration;
-import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.vb.redditposts.R;
@@ -27,14 +26,15 @@ public class PostsFragment extends Fragment implements IPostsFragment {
     private NavController mNavController;
 
     private PostsFragmentPresenter mPostsFragmentPresenter;
+    PostsRecyclerViewAdapter mAdapter;
 
     private RecyclerView mPostsRecycler;
+    private ProgressBar mProgressBar;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        mPostsFragmentPresenter = new PostsFragmentPresenter(this);
-        makeRequest();
+
     }
 
     @Nullable
@@ -42,7 +42,11 @@ public class PostsFragment extends Fragment implements IPostsFragment {
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_posts, container, false);
         setmNavController();
+        mProgressBar = view.findViewById(R.id.progress_bar);
         recyclerInit(view);
+        mAdapter = new PostsRecyclerViewAdapter(getContext(), mNavController);
+        mPostsFragmentPresenter = new PostsFragmentPresenter(this, mAdapter, mPostsRecycler);
+        makeRequest();
         return view;
     }
 
@@ -51,17 +55,14 @@ public class PostsFragment extends Fragment implements IPostsFragment {
     }
 
     private void makeRequest(){
-        mPostsFragmentPresenter.getPosts(POSTS_URL);
+        mPostsFragmentPresenter.getPosts(POSTS_URL, mProgressBar);
     }
 
     private void recyclerInit(View view){
         mPostsRecycler = view.findViewById(R.id.posts_list);
-        PostsRecyclerViewAdapter adapter = new PostsRecyclerViewAdapter(getContext(), mNavController);
-        adapter.setmPostsList(mPostsFragmentPresenter.getmPostsList());
-        mPostsRecycler.setAdapter(adapter);
-        mPostsRecycler.setLayoutManager(new LinearLayoutManager(getContext()));
-        mPostsRecycler.addItemDecoration(new DividerItemDecoration(getContext(), DividerItemDecoration.VERTICAL));
     }
+
+
 
     @Override
     public Activity getFragmentActivity() {

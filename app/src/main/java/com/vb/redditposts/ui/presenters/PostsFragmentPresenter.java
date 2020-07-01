@@ -3,8 +3,15 @@ package com.vb.redditposts.ui.presenters;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.util.Log;
+import android.view.View;
+import android.widget.ProgressBar;
+
+import androidx.recyclerview.widget.DividerItemDecoration;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.vb.redditposts.data.models.Posts;
+import com.vb.redditposts.ui.adapters.PostsRecyclerViewAdapter;
 import com.vb.redditposts.ui.views.IPostsFragment;
 
 import org.json.JSONArray;
@@ -21,7 +28,6 @@ import java.nio.charset.Charset;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.List;
 
 import javax.net.ssl.HttpsURLConnection;
@@ -29,18 +35,22 @@ import javax.net.ssl.HttpsURLConnection;
 public class PostsFragmentPresenter {
 
     private IPostsFragment mIPostsFragment;
+
     private List<Posts> mPostsList;
 
+    private PostsRecyclerViewAdapter mAdapter;
+
+    private RecyclerView mRecyclerView;
 
 
 
-    public PostsFragmentPresenter(IPostsFragment mIPostsFragment) {
+    public PostsFragmentPresenter(IPostsFragment mIPostsFragment, PostsRecyclerViewAdapter adapter,
+                                  RecyclerView recyclerView) {
         this.mIPostsFragment = mIPostsFragment;
+        this.mAdapter = adapter;
+        this.mRecyclerView = recyclerView;
     }
 
-    public List<Posts> getmPostsList() {
-        return mPostsList;
-    }
 
     private static String makeHttpsRequest(URL url) throws IOException {
         String responce = "";
@@ -145,17 +155,23 @@ public class PostsFragmentPresenter {
         return posts;
     }
 
-    public void getPosts(String postsUrl) {
+    public void getPosts(String postsUrl, ProgressBar progressBar) {
         Thread t = new Thread(() -> {
-            mPostsList = makePostsReq(postsUrl);
+            try{
+                mPostsList = makePostsReq(postsUrl);
+                mAdapter.setmPostsList(mPostsList);
+
+            } finally {
+                mIPostsFragment.getFragmentActivity().runOnUiThread(() -> {
+                    progressBar.setVisibility(View.GONE);
+                    mRecyclerView.setAdapter(mAdapter);
+                    mRecyclerView.setLayoutManager(new LinearLayoutManager(mIPostsFragment.getFragmentActivity()));
+                    mRecyclerView.addItemDecoration(new DividerItemDecoration(mIPostsFragment.getFragmentActivity()
+                            , DividerItemDecoration.VERTICAL));
+                });
+            }
         });
         t.start();
-        try {
-            t.join();
-        } catch (InterruptedException e){
-            e.printStackTrace();
-        }
 
     }
-
 }
